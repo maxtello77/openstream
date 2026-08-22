@@ -57,7 +57,7 @@ class RecordService : Service() {
 
         val data = projectionData ?: run { stopSelf(); return START_NOT_STICKY }
         val mgr = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        projection = mgr.getMediaProjection(MediaProjectionManager.RESULT_OK, data).also { p ->
+        projection = mgr.getMediaProjection(android.app.Activity.RESULT_OK, data).also { p ->
             p.registerCallback(object : MediaProjection.Callback() {
                 override fun onStop() = stopRecording()
             }, null)
