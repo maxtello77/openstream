@@ -24,9 +24,21 @@ jobs:
       - name: Build debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          set +e
+          ./gradlew assembleDebug --stacktrace > build.log 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "===== GRADLE FAILURE — last 150 lines ====="
+            tail -150 build.log
+            echo "============================================"
+            grep -aE "^e: |error: |Caused by|What went wrong|FAILURE:|^> " build.log | head -50 | while IFS= read -r line; do
+              echo "::error::${line:0:250}"
+            done
+            exit 1
+          fi
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: OpenStream-debug-apk
