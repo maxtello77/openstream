@@ -3,18 +3,25 @@ package com.openstream.app
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.PictureInPictureAlt
@@ -36,9 +43,12 @@ class MainActivity : ComponentActivity() {
 
     private var player: ExoPlayer? = null
 
+    fun attachPlayer(p: ExoPlayer?) { player = p }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { OpenStreamApp { exo -> player = exo } }
+        CrashReporter.install(this)
+        setContent { Root() }
     }
 
     @Deprecated("Deprecated in Java")
@@ -51,14 +61,54 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun OpenStreamApp(onPlayerCreated: (ExoPlayer?) -> Unit) {
+fun Root() {
+    val context = LocalContext.current
+    var crash by remember { mutableStateOf(CrashReporter.lastCrash(context)) }
+
+    if (crash != null) {
+        CrashScreen(crash!!) {
+            CrashReporter.clear(context)
+            crash = null
+        }
+    } else {
+        OpenStreamApp()
+    }
+}
+
+/** Plain-View crash screen: works even if the Compose UI itself is what crashed. */
+@Composable
+fun CrashScreen(text: String, onClear: () -> Unit) {
+    AndroidView(
+        modifier = Modifier.fillMaxSize().background(Color.Black).verticalScroll(rememberScrollState()),
+        factory = { ctx ->
+            LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 96, 48, 48)
+                addView(TextView(ctx).apply {
+                    setText("The app crashed. Please screenshot this screen and send it to your developer.\n\n$text")
+                    setTextColor(Color.rgb(255, 110, 110))
+                    textSize = 12f
+                    setTextIsSelectable(true)
+                })
+                addView(Button(ctx).apply {
+                    text = "Clear and continue"
+                    setOnClickListener { onClear() }
+                })
+            }
+        }
+    )
+}
+
+@Composable
+fun OpenStreamApp() {
     val context = LocalContext.current
     val activity = context as? MainActivity
+    val activityContext = LocalContext.current
 
-    val exo = remember { ExoPlayer.Builder(context).build() }
+    val exo = remember { ExoPlayer.Builder(activityContext).build() }
     DisposableEffect(Unit) {
-        onPlayerCreated(exo)
-        onDispose { exo.release(); onPlayerCreated(null) }
+        (context as? MainActivity)?.let { it.attachPlayer(exo) }
+        onDispose { exo.release() }
     }
 
     var currentSource by remember { mutableStateOf<String?>(null) }
@@ -103,6 +153,25 @@ fun OpenStreamApp(onPlayerCreated: (ExoPlayer?) -> Unit) {
                     modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
                     update = { it.player = exo }
                 )
+            } else {
+                Column(Modifier.padding(16.dp)) {
+                    Text("OpenStream", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Play a local video file, or paste a stream URL below.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row {
+                        OutlinedButton(onClick = {
+                            play("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")
+                        }) { Text("Test MP4") }
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(onClick = {
+                            play("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+                        }) { Text("Test HLS") }
+                    }
+                }
             }
 
             Row(
