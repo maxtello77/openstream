@@ -79,7 +79,7 @@ fun Root() {
 @Composable
 fun CrashScreen(text: String, onClear: () -> Unit) {
     AndroidView(
-        modifier = Modifier.fillMaxSize().background(Color.Black).verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize().background(Color.BLACK).verticalScroll(rememberScrollState()),
         factory = { ctx ->
             LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
@@ -91,7 +91,7 @@ fun CrashScreen(text: String, onClear: () -> Unit) {
                     setTextIsSelectable(true)
                 })
                 addView(Button(ctx).apply {
-                    text = "Clear and continue"
+                    setText("Clear and continue")
                     setOnClickListener { onClear() }
                 })
             }
