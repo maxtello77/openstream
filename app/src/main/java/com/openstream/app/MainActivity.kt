@@ -3,7 +3,7 @@ package com.openstream.app
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
+import android.graphics.Color // used for the plain-View crash screen
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
@@ -79,7 +79,7 @@ fun Root() {
 @Composable
 fun CrashScreen(text: String, onClear: () -> Unit) {
     AndroidView(
-        modifier = Modifier.fillMaxSize().background(Color.BLACK).verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         factory = { ctx ->
             LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
