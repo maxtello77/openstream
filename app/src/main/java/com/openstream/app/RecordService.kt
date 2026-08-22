@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.hardware.display.DisplayManager
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -111,7 +112,7 @@ class RecordService : Service() {
 
         virtualDisplay = projection?.createVirtualDisplay(
             "OpenStreamRecord", width, height, metrics.densityDpi,
-            android.view.Display.FLAG_AUTO_MIRROR, r.surface, null, null
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, r.surface, null, null
         )
         r.start()
         isRecording = true
