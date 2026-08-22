@@ -31,8 +31,8 @@ jobs:
             echo "===== GRADLE FAILURE — last 150 lines ====="
             tail -150 build.log
             echo "============================================"
-            grep -aE "^e: |error: |Caused by|What went wrong|FAILURE:|^> " build.log | head -50 | while IFS= read -r line; do
-              echo "::error::${line:0:250}"
+            awk '/What went wrong|Could not resolve|FAILURE: Build failed/{f=1} f' build.log | head -40 | while IFS= read -r line; do
+              echo "::error::[$RANDOM] ${line:0:220}"
             done
             exit 1
           fi
